@@ -16,6 +16,10 @@ export default function DashboardLayout({children,}: {children: React.ReactNode}
               <a href="/dashboard/vacations" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-gray-900">
                 Vacations
               </a>
+          
+              <a href="/dashboard/promotions" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-gray-900">
+                Promotions
+              </a>
             </div>
           </div>
         </div>
