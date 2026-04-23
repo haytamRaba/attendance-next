@@ -7,11 +7,11 @@ async function getEmployeeStats() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
   
-  // For now, get the first employee (we'll add authentication later)
+  // add authentication later
   const { data: employee } = await supabase
     .from('employees')
     .select('*')
-    .limit(1)
+    .eq('email', 'haytamemsi@raba.com')
     .single()
   
   // Get today's attendance if exists
