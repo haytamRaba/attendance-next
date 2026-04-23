@@ -21,7 +21,7 @@ export default async function TestSupabasePage() {
         </div>
         ) : (
         <div>
-          <p className="text-green-600 mb-4">✓ Connected successfully!</p>
+          <p className="text-green-600 mb-4">Connected successfully!</p>
           <p className="font-semibold">Employees in database:</p>
           <pre className="mt-2 p-4 text-blue-700 bg-gray-100 rounded overflow-auto">
             {JSON.stringify(employees, null, 2)}

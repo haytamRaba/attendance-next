@@ -8,7 +8,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// Moroccan labor law: 1.5 days per month = 18 days per year
 const DAYS_PER_MONTH = 1.5
 const TOTAL_ANNUAL_DAYS = 18
 
@@ -34,7 +33,6 @@ export default function VacationsPage() {
   async function loadData() {
     setLoading(true)
     
-    // Get employee
     const { data: empData } = await supabase
       .from('employees')
       .select('*')
@@ -44,7 +42,7 @@ export default function VacationsPage() {
     if (empData) {
       setEmployee(empData)
       await loadVacations(empData.id)
-      calculateVacationStats(empData.hire_date, empData.id)
+      await calculateVacationStats(empData.hire_date, empData.id)
     }
     
     setLoading(false)
@@ -80,8 +78,8 @@ export default function VacationsPage() {
     
     setStats({
       totalDaysUsed: used,
-      daysRemaining: Math.max(0, accrued - used),
-      accruedDays: Math.floor(accrued * 10) / 10 
+      daysRemaining: Math.max(0, Math.floor(accrued) - used), // Round down for full days
+      accruedDays: Math.floor(accrued) 
     })
   }
 
@@ -89,7 +87,39 @@ export default function VacationsPage() {
     const startDate = new Date(start)
     const endDate = new Date(end)
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 // +1 to include both days
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 
+  }
+
+  async function checkOverlap(startDate: string, endDate: string): Promise<boolean> {
+    if (!employee) return false
+    
+    // Get all approved and pending vacations for this employee
+    const { data: existingVacations } = await supabase
+      .from('vacations')
+      .select('start_date, end_date, status')
+      .eq('employee_id', employee.id)
+      .in('status', ['approved', 'pending'])
+    
+    if (!existingVacations || existingVacations.length === 0) {
+      return false
+    }
+    
+    const newStart = new Date(startDate)
+    const newEnd = new Date(endDate)
+    
+    // Check each existing vacation for overlap
+    for (const vac of existingVacations) {
+      const existingStart = new Date(vac.start_date)
+      const existingEnd = new Date(vac.end_date)
+      
+      // Overlap condition: 
+      // New start is before existing end AND new end is after existing start
+      if (newStart <= existingEnd && newEnd >= existingStart) {
+        return true // Overlap found!
+      }
+    }
+    
+    return false
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -98,13 +128,29 @@ export default function VacationsPage() {
     
     const daysRequested = calculateDaysBetween(formData.start_date, formData.end_date)
     
-    // Check if enough days remaining
+    // Check 1: Enough days remaining?
     if (daysRequested > stats.daysRemaining) {
       alert(`You only have ${stats.daysRemaining} days remaining. Requested: ${daysRequested} days`)
       setLoading(false)
       return
     }
     
+    // Check 2: Overlap with existing vacations?
+    const hasOverlap = await checkOverlap(formData.start_date, formData.end_date)
+    if (hasOverlap) {
+      alert('You already have a vacation request for these dates! Please check your calendar.')
+      setLoading(false)
+      return
+    }
+    
+    // Check 3: Start date must be before end date
+    if (new Date(formData.start_date) > new Date(formData.end_date)) {
+      alert('Start date must be before end date')
+      setLoading(false)
+      return
+    }
+    
+    // If all checks pass, submit
     const { error } = await supabase
       .from('vacations')
       .insert({
@@ -121,7 +167,7 @@ export default function VacationsPage() {
       alert('Vacation request submitted!')
       setShowForm(false)
       setFormData({ start_date: '', end_date: '' })
-      loadData() // Refresh all data
+      await loadData() // Refresh all data
     }
     
     setLoading(false)
@@ -136,11 +182,11 @@ export default function VacationsPage() {
     if (error) {
       alert('Error updating status: ' + error.message)
     } else {
-      loadData()
+      await loadData()
     }
   }
 
-  if (!employee) return <div className="p-8">Loading employee data...</div>
+  if (!employee) return <div className="p-8 text-center">Loading employee data...</div>
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -188,6 +234,7 @@ export default function VacationsPage() {
                 type="date"
                 required
                 value={formData.start_date}
+                min={new Date().toISOString().split('T')[0]} // Can't request past dates
                 onChange={(e) => setFormData({...formData, start_date: e.target.value})}
                 className="w-full border rounded px-3 py-2"
               />
@@ -198,6 +245,7 @@ export default function VacationsPage() {
                 type="date"
                 required
                 value={formData.end_date}
+                min={formData.start_date || new Date().toISOString().split('T')[0]}
                 onChange={(e) => setFormData({...formData, end_date: e.target.value})}
                 className="w-full border rounded px-3 py-2"
               />
@@ -282,14 +330,13 @@ export default function VacationsPage() {
         </div>
       </div>
       
-      {/* Info Box */}
+      {/* Info Box - Updated with carryover rules */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="font-semibold mb-2">Moroccan Labor Law Reference:</h3>
         <ul className="text-sm space-y-1 text-gray-700">
           <li>• 1.5 days of paid vacation per month worked</li>
           <li>• Total 18 days per full year (Article 238 of Labor Code)</li>
-          <li>• Vacations must be taken within the year they are earned</li>
-          <li>• Employer can decide vacation timing based on work needs</li>
+          <li>• Or employer pays compensation for unused days</li>
         </ul>
       </div>
     </div>

@@ -119,7 +119,7 @@ export default function AttendancePage() {
           // Checked in but not out
           <div>
             <p className="text-green-600 mb-2">
-              ✓ Checked in at {new Date(todayRecord.check_in).toLocaleTimeString()}
+              Checked in at {new Date(todayRecord.check_in).toLocaleTimeString()}
             </p>
             <button
               onClick={handleCheckOut}
@@ -133,10 +133,10 @@ export default function AttendancePage() {
           // Completed day
           <div>
             <p className="text-green-600">
-              ✓ Checked in: {new Date(todayRecord.check_in).toLocaleTimeString()}
+              Checked in: {new Date(todayRecord.check_in).toLocaleTimeString()}
             </p>
             <p className="text-green-600">
-              ✓ Checked out: {new Date(todayRecord.check_out).toLocaleTimeString()}
+              Checked out: {new Date(todayRecord.check_out).toLocaleTimeString()}
             </p>
             <p className="text-gray-500 mt-4">Great work today!</p>
           </div>
