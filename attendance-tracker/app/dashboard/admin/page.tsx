@@ -108,15 +108,15 @@ export default function AdminDashboard() {
     if (!attendance) return <span className="text-gray-400 text-xs">-</span>
     
     if (attendance.location_verified) {
-      return <span className="text-green-600 text-xs">✅ Verified</span>
+      return <span className="text-green-600 text-xs">Verified</span>
     }
     
     if (attendance.check_in_latitude && attendance.check_in_longitude) {
-      return <span className="text-yellow-600 text-xs">⚠️ GPS Only</span>
+      return <span className="text-yellow-600 text-xs">GPS Only</span>
     }
     
     if (attendance.check_in_ip) {
-      return <span className="text-gray-500 text-xs">🌐 IP Only</span>
+      return <span className="text-gray-500 text-xs">IP Only</span>
     }
     
     return <span className="text-gray-400 text-xs">-</span>
@@ -150,7 +150,6 @@ export default function AdminDashboard() {
               <p className="text-gray-500 text-sm">Late Today</p>
               <p className="text-3xl font-bold text-red-600">{lateEmployees.length}</p>
             </div>
-            <div className="text-4xl">⏰</div>
           </div>
           {lateEmployees.length > 0 && (
             <div className="mt-2 text-sm text-red-600">
@@ -166,7 +165,6 @@ export default function AdminDashboard() {
               <p className="text-gray-500 text-sm">Absent Today</p>
               <p className="text-3xl font-bold text-orange-600">{absentEmployees.length}</p>
             </div>
-            <div className="text-4xl">😴</div>
           </div>
           {absentEmployees.length > 0 && (
             <div className="mt-2 text-sm text-orange-600">
@@ -182,7 +180,6 @@ export default function AdminDashboard() {
               <p className="text-gray-500 text-sm">Present Today</p>
               <p className="text-3xl font-bold text-green-600">{todayAttendance.length}</p>
             </div>
-            <div className="text-4xl">✅</div>
           </div>
           <p className="text-sm text-gray-500 mt-2">
             Out of {employees.length} total employees
@@ -222,13 +219,13 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4">{getStatusBadge(employee.role)}</td>
                     <td className="px-6 py-4">
                       {isLate ? (
-                        <span className="text-red-600 font-medium">⚠️ Late ({isLate.minutesLate} min)</span>
+                        <span className="text-red-600 font-medium">Late ({isLate.minutesLate} min)</span>
                       ) : isAbsent ? (
-                        <span className="text-orange-600 font-medium">❌ Absent</span>
+                        <span className="text-orange-600 font-medium">Absent</span>
                       ) : attendanceData ? (
-                        <span className="text-green-600 font-medium">✅ Present</span>
+                        <span className="text-green-600 font-medium">Present</span>
                       ) : (
-                        <span className="text-gray-500">⚪ No data</span>
+                        <span className="text-gray-500">No data</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -265,16 +262,16 @@ export default function AdminDashboard() {
           <button 
             onClick={() => {
               const lateList = lateEmployees.map(e => `${e.full_name} (${e.minutesLate} min late)`).join('\n')
-              alert(`📊 Daily Report - ${new Date().toLocaleDateString()}\n\n` +
-                `✅ Present: ${todayAttendance.length}\n` +
-                `⏰ Late: ${lateEmployees.length}\n` +
-                `❌ Absent: ${absentEmployees.length}\n\n` +
+              alert(`Daily Report - ${new Date().toLocaleDateString()}\n\n` +
+                `Present: ${todayAttendance.length}\n` +
+                `Late: ${lateEmployees.length}\n` +
+                `Absent: ${absentEmployees.length}\n\n` +
                 (lateList ? `Late Employees:\n${lateList}\n\n` : '') +
                 (absentEmployees.length > 0 ? `Absent Employees:\n${absentEmployees.map(e => e.full_name).join('\n')}` : ''))
             }}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
-            📊 Show Daily Report
+            Show Daily Report
           </button>
           <button 
             onClick={() => {
@@ -282,19 +279,19 @@ export default function AdminDashboard() {
             }}
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
           >
-            📥 Download Full Report
+            Download Full Report
           </button>
           <a 
             href="/dashboard/admin/vacations"
             className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-block"
           >
-            📋 Review Vacations
+            Review Vacations
           </a>
           <a 
             href="/dashboard/admin/locations"
             className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 inline-block"
           >
-            📍 Manage Offices
+            Manage Offices
           </a>
         </div>
       </div>

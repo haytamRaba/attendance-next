@@ -17,7 +17,7 @@ export async function sendVacationRequestEmail(
 ) {
   // In development, just log to console
   if (IS_DEVELOPMENT) {
-    console.log('📧 EMAIL WOULD BE SENT:', {
+    console.log('Email would be sent:', {
       to: managerEmail,
       subject: `Vacation Request: ${employeeName} - ${subject}`,
       html: `
@@ -45,13 +45,13 @@ export async function sendVacationRequestEmail(
           <h2 style="color: #333;">New Vacation Request</h2>
           
           <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>👤 Employee:</strong> ${employeeName}</p>
-            <p><strong>📧 Email:</strong> ${employeeEmail}</p>
-            <p><strong>📝 Subject:</strong> ${subject}</p>
-            <p><strong>📅 Dates:</strong> ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}</p>
-            <p><strong>📊 Days Requested:</strong> ${daysCount}</p>
+            <p><strong>Employee:</strong> ${employeeName}</p>
+            <p><strong>Email:</strong> ${employeeEmail}</p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Dates:</strong> ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}</p>
+            <p><strong>Days Requested:</strong> ${daysCount}</p>
             <div style="margin-top: 15px;">
-              <strong>💬 Reason for vacation:</strong>
+              <strong>Reason for vacation:</strong>
               <p style="margin-top: 5px; padding: 10px; background-color: white; border-radius: 5px;">
                 ${reason}
               </p>
@@ -90,7 +90,7 @@ export async function sendVacationStatusEmail(
   reason?: string
 ) {
   if (IS_DEVELOPMENT) {
-    console.log('📧 STATUS EMAIL:', {
+    console.log('Status email:', {
       to: employeeEmail,
       subject: `Vacation Request ${status}: ${employeeName}`,
       html: `<p>Your vacation request has been ${status}.</p>`
@@ -100,7 +100,7 @@ export async function sendVacationStatusEmail(
 
   try {
     const statusColor = status === 'approved' ? '#10B981' : '#EF4444'
-    const statusText = status === 'approved' ? 'Approved ✓' : 'Rejected ✗'
+    const statusText = status === 'approved' ? 'Approved' : 'Rejected'
     
     await resend.emails.send({
       from: 'Attendance System <onboarding@resend.dev>',
@@ -112,8 +112,8 @@ export async function sendVacationStatusEmail(
           
           <div style="background-color: ${statusColor}10; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid ${statusColor}">
             <p style="font-size: 18px; font-weight: bold; color: ${statusColor};">${statusText}</p>
-            <p><strong>📅 Dates:</strong> ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}</p>
-            ${reason ? `<p><strong>💬 Manager Notes:</strong> ${reason}</p>` : ''}
+            <p><strong>Dates:</strong> ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}</p>
+            ${reason ? `<p><strong>Manager Notes:</strong> ${reason}</p>` : ''}
           </div>
           
           <p>You can view all your vacation requests in the dashboard.</p>

@@ -341,7 +341,7 @@ export default function VacationsPage() {
             </button>
             
             <p className="text-xs text-gray-500 text-center">
-              📧 RH will be notified via email immediately
+              RH will be notified via email immediately
             </p>
           </form>
         </div>
@@ -400,7 +400,7 @@ export default function VacationsPage() {
       
       {/* Info Box */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold mb-2">📧 How it works:</h3>
+        <h3 className="font-semibold mb-2">How it works:</h3>
         <ul className="text-sm space-y-1 text-gray-700">
           <li>• Fill in subject and reason for your vacation</li>
           <li>• RH receives an email notification immediately</li>

@@ -177,7 +177,7 @@ export default function OfficeLocationsPage() {
                 onClick={getCurrentLocation}
                 className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
               >
-                📍 Use My Current Location
+                Use My Current Location
               </button>
               <button
                 type="submit"

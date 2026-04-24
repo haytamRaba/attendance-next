@@ -51,7 +51,6 @@ export default function DashboardLayout({
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-2xl mb-2">📋</div>
           <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>
@@ -84,7 +83,7 @@ export default function DashboardLayout({
                     : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
-                📍 Attendance
+                Attendance
               </a>
               <a 
                 href="/dashboard/vacations" 
@@ -94,7 +93,7 @@ export default function DashboardLayout({
                     : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
-                🌴 Vacations
+                Vacations
               </a>
               <a 
                 href="/dashboard/promotions" 
@@ -104,7 +103,7 @@ export default function DashboardLayout({
                     : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
-                📈 Promotions
+                Promotions
               </a>
               <a 
                 href="/dashboard/profile" 
@@ -114,7 +113,7 @@ export default function DashboardLayout({
                     : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
-                👤 Profile
+                Profile
               </a>
             </div>
 
@@ -141,7 +140,7 @@ export default function DashboardLayout({
                       : 'text-red-500 hover:text-red-700'
                   }`}
                 >
-                  👑 RH Dashboard
+                  RH Dashboard
                 </a>
                 <a 
                   href="/dashboard/admin/vacations" 
@@ -151,7 +150,7 @@ export default function DashboardLayout({
                       : 'text-orange-500 hover:text-orange-700'
                   }`}
                 >
-                  📋 Approve Vacations
+                  Approve Vacations
                 </a>
                 <a 
                   href="/dashboard/admin/reports" 
@@ -161,7 +160,7 @@ export default function DashboardLayout({
                       : 'text-purple-500 hover:text-purple-700'
                   }`}
                 >
-                  📊 Monthly Reports
+                  Monthly Reports
                 </a>
                 <a 
                   href="/dashboard/admin/locations" 
@@ -171,7 +170,7 @@ export default function DashboardLayout({
                       : 'text-blue-500 hover:text-blue-700'
                   }`}
                 >
-                  📍 Office Locations
+                  Office Locations
                 </a>
               </div>
             </div>

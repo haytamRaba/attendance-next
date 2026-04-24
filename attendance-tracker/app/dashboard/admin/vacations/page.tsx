@@ -85,7 +85,6 @@ export default function AdminVacationsPage() {
       
       {pendingRequests.length === 0 ? (
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-          <div className="text-4xl mb-2">✅</div>
           <p className="text-green-800 font-medium">No pending requests - all caught up!</p>
           <p className="text-green-600 text-sm mt-1">All vacation requests have been reviewed.</p>
         </div>
@@ -104,14 +103,14 @@ export default function AdminVacationsPage() {
                   <p className="text-gray-600 text-sm">{request.employee.position} • {request.employee.email}</p>
                   
                   <div className="mt-3 bg-gray-50 p-3 rounded">
-                    <p className="font-medium text-sm">📝 Subject: {request.subject || 'Vacation Request'}</p>
-                    <p className="text-sm mt-1">💬 Reason: {request.reason || 'No reason provided'}</p>
+                    <p className="font-medium text-sm">Subject: {request.subject || 'Vacation Request'}</p>
+                    <p className="text-sm mt-1">Reason: {request.reason || 'No reason provided'}</p>
                   </div>
                   
                   <div className="mt-2 space-y-1 text-sm">
-                    <p>📅 {new Date(request.start_date).toLocaleDateString()} → {new Date(request.end_date).toLocaleDateString()}</p>
-                    <p>📊 {request.days_used} days requested</p>
-                    <p>📅 Requested on: {new Date(request.created_at).toLocaleDateString()}</p>
+                    <p>{new Date(request.start_date).toLocaleDateString()} - {new Date(request.end_date).toLocaleDateString()}</p>
+                    <p>{request.days_used} days requested</p>
+                    <p>Requested on: {new Date(request.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
                 
@@ -120,13 +119,13 @@ export default function AdminVacationsPage() {
                     onClick={() => updateStatus(request.id, 'approved')}
                     className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                   >
-                    ✅ Approve
+                    Approve
                   </button>
                   <button
                     onClick={() => setSelectedRequest(request)}
                     className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
                   >
-                    ❌ Reject with Reason
+                    Reject with Reason
                   </button>
                 </div>
               </div>

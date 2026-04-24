@@ -47,7 +47,7 @@ export default function AttendancePage() {
       
       // If not verified, show error but don't block (just warn)
       if (!status.isVerified) {
-        setError(`⚠️ Location Warning: ${status.message}`)
+        setError(`Location Warning: ${status.message}`)
       }
     } catch (err: any) {
       setLocationStatus({
@@ -122,7 +122,7 @@ export default function AttendancePage() {
           locationVerified = verification.verified
           
           if (!locationVerified) {
-            setError(`⚠️ Warning: ${verification.message}. Check-in will be recorded with location data.`)
+            setError(`Warning: ${verification.message}. Check-in will be recorded with location data.`)
           }
         } catch (geoError) {
           console.warn('GPS failed, continuing with IP only:', geoError)
@@ -194,7 +194,7 @@ export default function AttendancePage() {
       }`}>
         <div className="flex items-center gap-3">
           <div className="text-2xl">
-            {locationStatus.isVerifying ? '📍' : locationStatus.verified ? '✅' : '⚠️'}
+              {locationStatus.isVerifying ? 'Verifying...' : locationStatus.verified ? 'Verified' : 'Not Verified'}
           </div>
           <div className="flex-1">
             <p className={`font-medium ${locationStatus.verified ? 'text-green-800' : 'text-yellow-800'}`}>
@@ -202,7 +202,7 @@ export default function AttendancePage() {
             </p>
             {locationStatus.officeName && (
               <p className="text-sm text-gray-600 mt-1">
-                📍 Office: {locationStatus.officeName}
+                Office: {locationStatus.officeName}
               </p>
             )}
             {locationStatus.method && (
@@ -228,23 +228,23 @@ export default function AttendancePage() {
               disabled={loading || locationStatus.isVerifying}
               className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
             >
-              {loading ? 'Processing...' : '📍 Check In with Location'}
+              {loading ? 'Processing...' : 'Check In with Location'}
             </button>
             {!locationStatus.verified && !locationStatus.isVerifying && (
               <p className="text-xs text-yellow-600 mt-3">
-                ⚠️ You're not at an office location. Check-in will be recorded but marked as unverified.
+                You're not at an office location. Check-in will be recorded but marked as unverified.
               </p>
             )}
           </div>
         ) : !todayRecord.check_out ? (
           <div>
             <p className="text-green-600 mb-2">
-              ✓ Checked in at {new Date(todayRecord.check_in).toLocaleTimeString()}
+              Checked in at {new Date(todayRecord.check_in).toLocaleTimeString()}
             </p>
             {todayRecord.location_verified ? (
-              <p className="text-xs text-green-500">✓ Location verified</p>
+              <p className="text-xs text-green-500">Location verified</p>
             ) : (
-              <p className="text-xs text-yellow-500">⚠️ Location not verified</p>
+              <p className="text-xs text-yellow-500">Location not verified</p>
             )}
             <button
               onClick={handleCheckOut}
@@ -257,15 +257,15 @@ export default function AttendancePage() {
         ) : (
           <div>
             <p className="text-green-600">
-              ✓ Checked in: {new Date(todayRecord.check_in).toLocaleTimeString()}
+              Checked in: {new Date(todayRecord.check_in).toLocaleTimeString()}
             </p>
             <p className="text-green-600">
-              ✓ Checked out: {new Date(todayRecord.check_out).toLocaleTimeString()}
+              Checked out: {new Date(todayRecord.check_out).toLocaleTimeString()}
             </p>
             {todayRecord.location_verified ? (
-              <p className="text-xs text-green-500 mt-2">✓ Location verified at check-in</p>
+              <p className="text-xs text-green-500 mt-2">Location verified at check-in</p>
             ) : (
-              <p className="text-xs text-yellow-500 mt-2">⚠️ Location was not verified at check-in</p>
+              <p className="text-xs text-yellow-500 mt-2">Location was not verified at check-in</p>
             )}
           </div>
         )}
@@ -273,9 +273,9 @@ export default function AttendancePage() {
       
       {/* Admin Info Box */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h3 className="font-semibold mb-2">📍 Location Check Requirements:</h3>
+        <h3 className="font-semibold mb-2">Location Check Requirements:</h3>
         <ul className="text-sm space-y-1 text-gray-600">
-          <li>• • You must be within 100m of configured office location</li>
+          <li>You must be within 100m of configured office location</li>
           <li>• GPS location is required for verification</li>
           <li>• IP address is logged as backup</li>
           <li>• Unverified check-ins are flagged for RH review</li>
