@@ -146,7 +146,7 @@ export default function ReportsPage() {
             onClick={downloadCSV}
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
           >
-            📥 Download CSV
+            Download CSV
           </button>
         </div>
       </div>
@@ -222,14 +222,14 @@ export default function ReportsPage() {
       </div>
 
       {/* Insights */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
-        <h3 className="font-semibold text-lg mb-3">📊 RH Insights</h3>
+      <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
+        <h3 className="font-semibold text-lg mb-3">RH Insights</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <h4 className="font-medium text-blue-800">Top Performers</h4>
             <ul className="mt-2 space-y-1">
               {reportData.filter(r => r.attendanceRate >= 95).slice(0, 3).map(r => (
-                <li key={r.id} className="text-sm text-blue-700">🏆 {r.full_name} - {r.attendanceRate}% attendance</li>
+                <li key={r.id} className="text-sm text-blue-700">{r.full_name} - {r.attendanceRate}% attendance</li>
               ))}
             </ul>
           </div>
@@ -237,7 +237,7 @@ export default function ReportsPage() {
             <h4 className="font-medium text-orange-800">Needs Improvement</h4>
             <ul className="mt-2 space-y-1">
               {reportData.filter(r => r.attendanceRate < 80).map(r => (
-                <li key={r.id} className="text-sm text-orange-700">⚠️ {r.full_name} - {r.attendanceRate}% attendance ({r.absentDays} absent days)</li>
+                <li key={r.id} className="text-sm text-orange-700">{r.full_name} - {r.attendanceRate}% attendance ({r.absentDays} absent days)</li>
               ))}
             </ul>
           </div>

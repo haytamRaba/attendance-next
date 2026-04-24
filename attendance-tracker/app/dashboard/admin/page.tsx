@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { requestNotificationPermission, sendLateAlert, sendAbsentAlert } from '@/app/lib/notifications'
+
+
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,6 +28,25 @@ export default function AdminDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [currentAdmin, setCurrentAdmin] = useState<Employee | null>(null)
 
+  useEffect(() => {
+  requestNotificationPermission()
+}, [])
+
+useEffect(() => {
+  if (!loading && lateEmployees.length > 0) {
+    lateEmployees.forEach(emp => {
+      sendLateAlert(emp.full_name, emp.minutesLate)
+    })
+  }
+  if (!loading && absentEmployees.length > 0) {
+    absentEmployees.forEach(emp => {
+      sendAbsentAlert(emp.full_name)
+    })
+  }
+}, [lateEmployees, absentEmployees, loading])
+  
+  
+  
   useEffect(() => {
     loadAllData()
   }, [selectedDate])
@@ -230,7 +252,6 @@ export default function AdminDashboard() {
                 )
               })}
             </tbody>
-
            </table>
         </div>
       </div>
