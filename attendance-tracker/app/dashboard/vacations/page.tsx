@@ -8,8 +8,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// Moroccan labor law: 1.5 days per month = 18 days per year
 const DAYS_PER_MONTH = 1.5
-const TOTAL_ANNUAL_DAYS = 18
 
 export default function VacationsPage() {
   const [loading, setLoading] = useState(false)
@@ -18,12 +18,19 @@ export default function VacationsPage() {
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     start_date: '',
-    end_date: ''
+    end_date: '',
+    subject: '',
+    reason: ''
   })
   const [stats, setStats] = useState({
     totalDaysUsed: 0,
     daysRemaining: 0,
     accruedDays: 0
+  })
+  const [emailStatus, setEmailStatus] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+    show: false,
+    message: '',
+    type: 'success'
   })
 
   useEffect(() => {
@@ -33,10 +40,11 @@ export default function VacationsPage() {
   async function loadData() {
     setLoading(true)
     
+    // Get employee (using your email)
     const { data: empData } = await supabase
       .from('employees')
       .select('*')
-      .limit(1)
+      .eq('email', 'haytamemsi@raba.com')
       .single()
     
     if (empData) {
@@ -53,13 +61,12 @@ export default function VacationsPage() {
       .from('vacations')
       .select('*')
       .eq('employee_id', employeeId)
-      .order('start_date', { ascending: false })
+      .order('created_at', { ascending: false })
     
     setVacations(data || [])
   }
 
   async function calculateVacationStats(hireDate: string, employeeId: string) {
-    // Calculate accrued days based on hire date
     const hire = new Date(hireDate)
     const now = new Date()
     const monthsWorked = (now.getFullYear() - hire.getFullYear()) * 12 + 
@@ -67,7 +74,6 @@ export default function VacationsPage() {
     
     const accrued = monthsWorked * DAYS_PER_MONTH
     
-    // Get used days from approved vacations
     const { data: approvedVacations } = await supabase
       .from('vacations')
       .select('days_used')
@@ -78,8 +84,8 @@ export default function VacationsPage() {
     
     setStats({
       totalDaysUsed: used,
-      daysRemaining: Math.max(0, Math.floor(accrued) - used), // Round down for full days
-      accruedDays: Math.floor(accrued) 
+      daysRemaining: Math.max(0, Math.floor(accrued) - used),
+      accruedDays: Math.floor(accrued)
     })
   }
 
@@ -87,13 +93,12 @@ export default function VacationsPage() {
     const startDate = new Date(start)
     const endDate = new Date(end)
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
   }
 
   async function checkOverlap(startDate: string, endDate: string): Promise<boolean> {
     if (!employee) return false
     
-    // Get all approved and pending vacations for this employee
     const { data: existingVacations } = await supabase
       .from('vacations')
       .select('start_date, end_date, status')
@@ -107,15 +112,12 @@ export default function VacationsPage() {
     const newStart = new Date(startDate)
     const newEnd = new Date(endDate)
     
-    // Check each existing vacation for overlap
     for (const vac of existingVacations) {
       const existingStart = new Date(vac.start_date)
       const existingEnd = new Date(vac.end_date)
       
-      // Overlap condition: 
-      // New start is before existing end AND new end is after existing start
       if (newStart <= existingEnd && newEnd >= existingStart) {
-        return true // Overlap found!
+        return true
       }
     }
     
@@ -128,62 +130,96 @@ export default function VacationsPage() {
     
     const daysRequested = calculateDaysBetween(formData.start_date, formData.end_date)
     
-    // Check 1: Enough days remaining?
+    // Validation checks
     if (daysRequested > stats.daysRemaining) {
       alert(`You only have ${stats.daysRemaining} days remaining. Requested: ${daysRequested} days`)
       setLoading(false)
       return
     }
     
-    // Check 2: Overlap with existing vacations?
     const hasOverlap = await checkOverlap(formData.start_date, formData.end_date)
     if (hasOverlap) {
-      alert('You already have a vacation request for these dates! Please check your calendar.')
+      alert('You already have a vacation request for these dates!')
       setLoading(false)
       return
     }
     
-    // Check 3: Start date must be before end date
-    if (new Date(formData.start_date) > new Date(formData.end_date)) {
-      alert('Start date must be before end date')
+    if (!formData.subject.trim()) {
+      alert('Please enter a subject for your vacation request')
       setLoading(false)
       return
     }
     
-    // If all checks pass, submit
-    const { error } = await supabase
+    if (!formData.reason.trim()) {
+      alert('Please provide a reason for your vacation request')
+      setLoading(false)
+      return
+    }
+    
+    // Submit to database
+    const { data: newVacation, error } = await supabase
       .from('vacations')
       .insert({
         employee_id: employee.id,
         start_date: formData.start_date,
         end_date: formData.end_date,
         days_used: daysRequested,
-        status: 'pending'
+        status: 'pending',
+        subject: formData.subject,
+        reason: formData.reason
       })
+      .select()
+      .single()
     
     if (error) {
       alert('Error submitting request: ' + error.message)
     } else {
-      alert('Vacation request submitted!')
+      // Try to send email notification
+      try {
+        const { sendVacationRequestEmail } = await import('@/app/lib/email-service')
+        const emailSent = await sendVacationRequestEmail(
+          employee.full_name,
+          employee.email,
+          formData.subject,
+          formData.reason,
+          formData.start_date,
+          formData.end_date,
+          daysRequested
+        )
+        
+        if (emailSent) {
+          setEmailStatus({
+            show: true,
+            message: 'Vacation request submitted! RH has been notified via email.',
+            type: 'success'
+          })
+        } else {
+          setEmailStatus({
+            show: true,
+            message: 'Request submitted but email notification failed. RH will still see it in dashboard.',
+            type: 'error'
+          })
+        }
+      } catch (emailError) {
+        console.error('Email error:', emailError)
+        setEmailStatus({
+          show: true,
+          message: 'Request submitted but email notification could not be sent.',
+          type: 'error'
+        })
+      }
+      
       setShowForm(false)
-      setFormData({ start_date: '', end_date: '' })
-      await loadData() // Refresh all data
+      setFormData({ start_date: '', end_date: '', subject: '', reason: '' })
+      await loadData()
+      
+      // Hide status message after 5 seconds
+      setTimeout(() => {
+        setEmailStatus({ show: false, message: '', type: 'success' })
+      }, 5000)
     }
     
     setLoading(false)
-  }
-
-  async function updateStatus(vacationId: string, newStatus: string) {
-    const { error } = await supabase
-      .from('vacations')
-      .update({ status: newStatus })
-      .eq('id', vacationId)
-    
-    if (error) {
-      alert('Error updating status: ' + error.message)
-    } else {
-      await loadData()
-    }
   }
 
   if (!employee) return <div className="p-8 text-center">Loading employee data...</div>
@@ -192,12 +228,21 @@ export default function VacationsPage() {
     <div className="max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Vacation Manager</h1>
       
+      {/* Status Message */}
+      {emailStatus.show && (
+        <div className={`mb-4 p-4 rounded-lg ${
+          emailStatus.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-yellow-50 text-yellow-800 border border-yellow-200'
+        }`}>
+          {emailStatus.message}
+        </div>
+      )}
+      
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm">Accrued Days</h3>
           <p className="text-3xl font-bold text-blue-600">{stats.accruedDays}</p>
-          <p className="text-xs text-gray-500">Since hire date ({new Date(employee.hire_date).toLocaleDateString()})</p>
+          <p className="text-xs text-gray-500">Since hire date</p>
         </div>
         
         <div className="bg-white rounded-lg shadow p-6">
@@ -223,63 +268,99 @@ export default function VacationsPage() {
         </button>
       </div>
       
-      {/* Request Form */}
+      {/* Request Form with Subject and Reason */}
       {showForm && (
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">New Vacation Request</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Start Date</label>
+              <label className="block text-sm font-medium mb-1">
+                Subject <span className="text-red-500">*</span>
+              </label>
               <input
-                type="date"
+                type="text"
                 required
-                value={formData.start_date}
-                min={new Date().toISOString().split('T')[0]} // Can't request past dates
-                onChange={(e) => setFormData({...formData, start_date: e.target.value})}
+                placeholder="e.g., Annual Leave, Family Event, Medical Leave"
+                value={formData.subject}
+                onChange={(e) => setFormData({...formData, subject: e.target.value})}
                 className="w-full border rounded px-3 py-2"
               />
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Start Date</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.start_date}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setFormData({...formData, start_date: e.target.value})}
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">End Date</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.end_date}
+                  min={formData.start_date || new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setFormData({...formData, end_date: e.target.value})}
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+            </div>
+            
             <div>
-              <label className="block text-sm font-medium mb-1">End Date</label>
-              <input
-                type="date"
+              <label className="block text-sm font-medium mb-1">
+                Reason for vacation <span className="text-red-500">*</span>
+              </label>
+              <textarea
                 required
-                value={formData.end_date}
-                min={formData.start_date || new Date().toISOString().split('T')[0]}
-                onChange={(e) => setFormData({...formData, end_date: e.target.value})}
+                rows={4}
+                placeholder="Please provide details about your vacation request..."
+                value={formData.reason}
+                onChange={(e) => setFormData({...formData, reason: e.target.value})}
                 className="w-full border rounded px-3 py-2"
               />
             </div>
+            
             {formData.start_date && formData.end_date && (
-              <div className="text-sm text-gray-600">
-                Requesting: {calculateDaysBetween(formData.start_date, formData.end_date)} days
+              <div className="text-sm bg-gray-50 p-3 rounded">
+                <strong>Summary:</strong> You are requesting {calculateDaysBetween(formData.start_date, formData.end_date)} days
               </div>
             )}
+            
             <button
               type="submit"
               disabled={loading}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50 w-full"
             >
-              {loading ? 'Submitting...' : 'Submit Request'}
+              {loading ? 'Submitting...' : 'Submit Request & Notify RH'}
             </button>
+            
+            <p className="text-xs text-gray-500 text-center">
+              📧 RH will be notified via email immediately
+            </p>
           </form>
         </div>
       )}
       
-      {/* Vacation History */}
+      {/* Vacation History - Now showing subjects too */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold">Vacation History</h2>
+          <h2 className="text-xl font-semibold">My Vacation History</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dates</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -292,8 +373,10 @@ export default function VacationsPage() {
               ) : (
                 vacations.map((vacation) => (
                   <tr key={vacation.id}>
-                    <td className="px-6 py-4">{new Date(vacation.start_date).toLocaleDateString()}</td>
-                    <td className="px-6 py-4">{new Date(vacation.end_date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 font-medium">{vacation.subject || 'Vacation'}</td>
+                    <td className="px-6 py-4">
+                      {new Date(vacation.start_date).toLocaleDateString()} → {new Date(vacation.end_date).toLocaleDateString()}
+                    </td>
                     <td className="px-6 py-4">{vacation.days_used}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded text-xs ${
@@ -304,23 +387,8 @@ export default function VacationsPage() {
                         {vacation.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 space-x-2">
-                      {vacation.status === 'pending' && (
-                        <>
-                          <button
-                            onClick={() => updateStatus(vacation.id, 'approved')}
-                            className="text-green-600 hover:text-green-800 text-sm"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => updateStatus(vacation.id, 'rejected')}
-                            className="text-red-600 hover:text-red-800 text-sm"
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
+                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                      {vacation.reason || '-'}
                     </td>
                   </tr>
                 ))
@@ -330,13 +398,14 @@ export default function VacationsPage() {
         </div>
       </div>
       
-      {/* Info Box - Updated with carryover rules */}
+      {/* Info Box */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold mb-2">Moroccan Labor Law Reference:</h3>
+        <h3 className="font-semibold mb-2">📧 How it works:</h3>
         <ul className="text-sm space-y-1 text-gray-700">
-          <li>• 1.5 days of paid vacation per month worked</li>
-          <li>• Total 18 days per full year (Article 238 of Labor Code)</li>
-          <li>• Or employer pays compensation for unused days</li>
+          <li>• Fill in subject and reason for your vacation</li>
+          <li>• RH receives an email notification immediately</li>
+          <li>• You'll get an email when your request is approved/rejected</li>
+          <li>• Moroccan labor law: 1.5 days per month (18 days/year)</li>
         </ul>
       </div>
     </div>
