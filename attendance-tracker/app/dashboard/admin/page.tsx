@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { requestNotificationPermission, sendLateAlert, sendAbsentAlert } from '@/app/lib/notifications'
-
-
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,32 +26,13 @@ export default function AdminDashboard() {
   const [currentAdmin, setCurrentAdmin] = useState<Employee | null>(null)
 
   useEffect(() => {
-  requestNotificationPermission()
-}, [])
-
-useEffect(() => {
-  if (!loading && lateEmployees.length > 0) {
-    lateEmployees.forEach(emp => {
-      sendLateAlert(emp.full_name, emp.minutesLate)
-    })
-  }
-  if (!loading && absentEmployees.length > 0) {
-    absentEmployees.forEach(emp => {
-      sendAbsentAlert(emp.full_name)
-    })
-  }
-}, [lateEmployees, absentEmployees, loading])
-  
-  
-  
-  useEffect(() => {
     loadAllData()
   }, [selectedDate])
 
   async function loadAllData() {
     setLoading(true)
     
-    // Get current admin (using Haytam's email)
+    // Get current admin (using your email)
     const { data: admin } = await supabase
       .from('employees')
       .select('*')
@@ -126,6 +104,24 @@ useEffect(() => {
     return <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">Employee</span>
   }
 
+  function getLocationBadge(attendance: any) {
+    if (!attendance) return <span className="text-gray-400 text-xs">-</span>
+    
+    if (attendance.location_verified) {
+      return <span className="text-green-600 text-xs">✅ Verified</span>
+    }
+    
+    if (attendance.check_in_latitude && attendance.check_in_longitude) {
+      return <span className="text-yellow-600 text-xs">⚠️ GPS Only</span>
+    }
+    
+    if (attendance.check_in_ip) {
+      return <span className="text-gray-500 text-xs">🌐 IP Only</span>
+    }
+    
+    return <span className="text-gray-400 text-xs">-</span>
+  }
+
   if (loading) return <div className="p-8 text-center">Loading team data...</div>
 
   return (
@@ -154,6 +150,7 @@ useEffect(() => {
               <p className="text-gray-500 text-sm">Late Today</p>
               <p className="text-3xl font-bold text-red-600">{lateEmployees.length}</p>
             </div>
+            <div className="text-4xl">⏰</div>
           </div>
           {lateEmployees.length > 0 && (
             <div className="mt-2 text-sm text-red-600">
@@ -169,6 +166,7 @@ useEffect(() => {
               <p className="text-gray-500 text-sm">Absent Today</p>
               <p className="text-3xl font-bold text-orange-600">{absentEmployees.length}</p>
             </div>
+            <div className="text-4xl">😴</div>
           </div>
           {absentEmployees.length > 0 && (
             <div className="mt-2 text-sm text-orange-600">
@@ -184,6 +182,7 @@ useEffect(() => {
               <p className="text-gray-500 text-sm">Present Today</p>
               <p className="text-3xl font-bold text-green-600">{todayAttendance.length}</p>
             </div>
+            <div className="text-4xl">✅</div>
           </div>
           <p className="text-sm text-gray-500 mt-2">
             Out of {employees.length} total employees
@@ -206,13 +205,13 @@ useEffect(() => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check In</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check Out</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
-
             <tbody className="divide-y divide-gray-200">
               {employees.map((employee) => {
-                const attendance = todayAttendance.find(a => a.id === employee.id)
+                const attendanceData = todayAttendance.find(a => a.id === employee.id)
                 const isLate = lateEmployees.find(l => l.id === employee.id)
                 const isAbsent = absentEmployees.find(a => a.id === employee.id)
                 
@@ -223,20 +222,23 @@ useEffect(() => {
                     <td className="px-6 py-4">{getStatusBadge(employee.role)}</td>
                     <td className="px-6 py-4">
                       {isLate ? (
-                        <span className="text-red-600 font-medium">Late ({isLate.minutesLate} min)</span>
+                        <span className="text-red-600 font-medium">⚠️ Late ({isLate.minutesLate} min)</span>
                       ) : isAbsent ? (
-                        <span className="text-orange-600 font-medium">Absent</span>
-                      ) : attendance ? (
-                        <span className="text-green-600 font-medium">Present</span>
+                        <span className="text-orange-600 font-medium">❌ Absent</span>
+                      ) : attendanceData ? (
+                        <span className="text-green-600 font-medium">✅ Present</span>
                       ) : (
-                        <span className="text-gray-500">No data</span>
+                        <span className="text-gray-500">⚪ No data</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      {attendance?.attendance?.check_in ? new Date(attendance.attendance.check_in).toLocaleTimeString() : '-'}
+                      {attendanceData?.attendance?.check_in ? new Date(attendanceData.attendance.check_in).toLocaleTimeString() : '-'}
                     </td>
                     <td className="px-6 py-4">
-                      {attendance?.attendance?.check_out ? new Date(attendance.attendance.check_out).toLocaleTimeString() : '-'}
+                      {attendanceData?.attendance?.check_out ? new Date(attendanceData.attendance.check_out).toLocaleTimeString() : '-'}
+                    </td>
+                    <td className="px-6 py-4">
+                      {getLocationBadge(attendanceData?.attendance)}
                     </td>
                     <td className="px-6 py-4">
                       <button
@@ -252,7 +254,7 @@ useEffect(() => {
                 )
               })}
             </tbody>
-           </table>
+          </table>
         </div>
       </div>
 
@@ -263,25 +265,36 @@ useEffect(() => {
           <button 
             onClick={() => {
               const lateList = lateEmployees.map(e => `${e.full_name} (${e.minutesLate} min late)`).join('\n')
-              alert(`Late employees:\n${lateList || 'None'}\n\nAbsent employees:\n${absentEmployees.map(e => e.full_name).join('\n') || 'None'}`)
+              alert(`📊 Daily Report - ${new Date().toLocaleDateString()}\n\n` +
+                `✅ Present: ${todayAttendance.length}\n` +
+                `⏰ Late: ${lateEmployees.length}\n` +
+                `❌ Absent: ${absentEmployees.length}\n\n` +
+                (lateList ? `Late Employees:\n${lateList}\n\n` : '') +
+                (absentEmployees.length > 0 ? `Absent Employees:\n${absentEmployees.map(e => e.full_name).join('\n')}` : ''))
             }}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
-            Send Absent Alert
+            📊 Show Daily Report
           </button>
           <button 
             onClick={() => {
-              alert('Report generation would download CSV/PDF here')
+              alert('Generate report with:\n- All employee attendance\n- Late/absent summary\n- Location verification status\n\nFeature coming soon with CSV export!')
             }}
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
           >
-            Download Today's Report
+            📥 Download Full Report
           </button>
           <a 
             href="/dashboard/admin/vacations"
             className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-block"
           >
-            Review Vacation Requests
+            📋 Review Vacations
+          </a>
+          <a 
+            href="/dashboard/admin/locations"
+            className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 inline-block"
+          >
+            📍 Manage Offices
           </a>
         </div>
       </div>
